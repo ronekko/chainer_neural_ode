@@ -76,11 +76,9 @@ class OdeStageFunction(chainer.Function):
         # Backward in time from t=1 to t=0.
         t = xp.array([1.0, 0.0], dtype=np.float32)
 
-        self._retain_grads_of_params()
         flat_solutions = odeint(self._backward_f, flat_s_t1, t,
                                 args=(self, x_shape),
                                 rtol=self.rtol, atol=self.atol)
-        self._set_retained_grads_of_params()
 
         flat_s_t0 = flat_solutions[-1].astype(np.float32)
 
@@ -155,15 +153,6 @@ class OdeStageFunction(chainer.Function):
         xp = self.ode_block.xp
         params = self._get_params()
         return xp.concatenate(tuple(p.grad.ravel() for p in params))
-
-    def _retain_grads_of_params(self):
-        params = self._get_params()
-        self._retained_params = copy.deepcopy(params)
-
-    def _set_retained_grads_of_params(self):
-        params = self._get_params()
-        for param, retained_param in zip(params, self._retained_params):
-            param.grad = retained_param.grad
 
     def _accumulate_grads_of_params(self, flat_gparams):
         i_start = 0
