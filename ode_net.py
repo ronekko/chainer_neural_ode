@@ -244,7 +244,7 @@ if __name__ == '__main__':
     net = Net2(2, 50)
 
 #    optimizer = chainer.optimizers.Adam().setup(net)
-    optimizer = chainer.optimizers.RMSprop(5e-3).setup(net)
+    optimizer = chainer.optimizers.RMSprop(1e-2).setup(net)
 
     losses = []
     for epoch in tqdm(range(num_epochs)):
