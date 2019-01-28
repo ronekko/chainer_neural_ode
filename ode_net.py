@@ -122,22 +122,22 @@ class OdeStageFunction(chainer.Function):
         x = Variable(x.astype(np.float32))
 
         # Wrap `t` as Variable
-        t = Variable(xp.array(t, dtype=np.float32))
+        t_var = Variable(xp.array(t, dtype=np.float32))
 
         # Extract `a(t)` from the augmented state
         flat_a = s[x_size:2*x_size]
         a = flat_a.reshape(x_shape)
         a = a.astype(np.float32)
-        self.ode_block.cleargrads()
-        with chainer.force_backprop_mode():
-            fx = self.ode_block(x, t)
-            fx.grad = a
-            fx.backward()
 
-        s = xp.concatenate((fx.array.ravel(),
-                            -x.grad.ravel(),
-                            -self._get_flat_grads_of_params(),
-                            -t.grad.reshape(1)))
+        # Compute grads
+        with chainer.force_backprop_mode():
+            fx = self.ode_block(x, t_var)
+        grads = chainer.grad((fx,),
+                             (x,) + self._get_params() + (t_var,),
+                             (a,))
+
+        flat_grads = xp.concatenate([grad.array.ravel() for grad in grads])
+        s = xp.concatenate([fx.array.ravel(), -flat_grads])
 
         self.nfe_backward += 1
         return s
